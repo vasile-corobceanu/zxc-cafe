@@ -120,7 +120,8 @@ class Command(BaseCommand):
                 [Button.inline('Mai multe', data=f'quantity_{product_id}_more')]
             ]
 
-            await event.edit("Cantitatea:", buttons=buttons)
+
+            await event.edit("Alege cantitatea produselor:", buttons=buttons)
 
         @client.on(events.CallbackQuery(data=re.compile('quantity_(\\d+)_(\\d+)')))
         async def quantity_selected(event):
