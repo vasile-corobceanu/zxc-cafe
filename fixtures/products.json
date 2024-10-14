@@ -1,0 +1,317 @@
+[
+{
+    "model": "bot.product",
+    "pk": 1,
+    "fields": {
+        "category": 1,
+        "name": "Espresso",
+        "price": "24.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 2,
+    "fields": {
+        "category": 1,
+        "name": "Americano",
+        "price": "24.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 3,
+    "fields": {
+        "category": 1,
+        "name": "Ristretto",
+        "price": "24.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 4,
+    "fields": {
+        "category": 1,
+        "name": "Cappuccino",
+        "price": "28.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 5,
+    "fields": {
+        "category": 1,
+        "name": "Latte",
+        "price": "33.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 6,
+    "fields": {
+        "category": 1,
+        "name": "Flat White",
+        "price": "44.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 7,
+    "fields": {
+        "category": 2,
+        "name": "Coca Cola",
+        "price": "18.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 8,
+    "fields": {
+        "category": 2,
+        "name": "Ciocolata Calda",
+        "price": "20.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 9,
+    "fields": {
+        "category": 2,
+        "name": "Apa Dorna",
+        "price": "15.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 10,
+    "fields": {
+        "category": 2,
+        "name": "Fanta",
+        "price": "18.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 11,
+    "fields": {
+        "category": 2,
+        "name": "Sprite",
+        "price": "18.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 12,
+    "fields": {
+        "category": 2,
+        "name": "Fuzetea",
+        "price": "20.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 13,
+    "fields": {
+        "category": 2,
+        "name": "Schweppes",
+        "price": "20.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 14,
+    "fields": {
+        "category": 2,
+        "name": "Burn",
+        "price": "31.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 15,
+    "fields": {
+        "category": 2,
+        "name": "Cappy",
+        "price": "21.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 16,
+    "fields": {
+        "category": 2,
+        "name": "Rich kids",
+        "price": "15.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 17,
+    "fields": {
+        "category": 3,
+        "name": "Ice Latte",
+        "price": "38.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 18,
+    "fields": {
+        "category": 3,
+        "name": "Limonada Clasica",
+        "price": "40.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 19,
+    "fields": {
+        "category": 3,
+        "name": "Limonada Capsuni",
+        "price": "40.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 20,
+    "fields": {
+        "category": 3,
+        "name": "Limonada portocale",
+        "price": "40.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 21,
+    "fields": {
+        "category": 3,
+        "name": "Limonada piersici",
+        "price": "40.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 22,
+    "fields": {
+        "category": 3,
+        "name": "Mojito",
+        "price": "45.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 23,
+    "fields": {
+        "category": 3,
+        "name": "Orange Coffee",
+        "price": "38.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 24,
+    "fields": {
+        "category": 3,
+        "name": "Espresso Tonic",
+        "price": "40.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 25,
+    "fields": {
+        "category": 1,
+        "name": "Lapte vegetal",
+        "price": "10.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 26,
+    "fields": {
+        "category": 1,
+        "name": "Sirop",
+        "price": "5.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 27,
+    "fields": {
+        "category": 4,
+        "name": "Strawberry milk:",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 28,
+    "fields": {
+        "category": 4,
+        "name": "Blue Lagoon milk",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 29,
+    "fields": {
+        "category": 4,
+        "name": "Banana matcha milk",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 30,
+    "fields": {
+        "category": 4,
+        "name": "Strawberry tea",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 31,
+    "fields": {
+        "category": 4,
+        "name": "Blue Lagoon tea",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 32,
+    "fields": {
+        "category": 4,
+        "name": "Banana matcha tea",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 33,
+    "fields": {
+        "category": 4,
+        "name": "Caramel Coffee",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 34,
+    "fields": {
+        "category": 4,
+        "name": "Chocolate coffee",
+        "price": "50.00"
+    }
+},
+{
+    "model": "bot.product",
+    "pk": 35,
+    "fields": {
+        "category": 4,
+        "name": "Coconut coffee",
+        "price": "50.00"
+    }
+}
+]

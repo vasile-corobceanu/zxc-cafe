@@ -1,0 +1,30 @@
+[
+{
+    "model": "bot.category",
+    "pk": 1,
+    "fields": {
+        "name": "Coffee"
+    }
+},
+{
+    "model": "bot.category",
+    "pk": 2,
+    "fields": {
+        "name": "Drinks"
+    }
+},
+{
+    "model": "bot.category",
+    "pk": 3,
+    "fields": {
+        "name": "Ice Drinks"
+    }
+},
+{
+    "model": "bot.category",
+    "pk": 4,
+    "fields": {
+        "name": "Bubble Tea"
+    }
+}
+]

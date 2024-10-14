@@ -23,9 +23,10 @@ class Product(models.Model):
 
 
 class Customer(models.Model):
+    BARISTA = 'barista'
     ROLE_CHOICES = (
         ('customer', 'Customer'),
-        ('barista', 'Barista'),
+        (BARISTA, 'Barista'),
     )
 
     user_id = models.IntegerField(unique=True)  # Telegram user ID
