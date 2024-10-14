@@ -31,6 +31,7 @@ class Customer(models.Model):
 
     user_id = models.IntegerField(unique=True)  # Telegram user ID
     username = models.CharField(max_length=100, blank=True, null=True)
+    first_name = models.CharField(max_length=100, blank=True, null=True)
     qr_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     coffees_count = models.IntegerField(default=0)
     coffees_free = models.IntegerField(default=0)

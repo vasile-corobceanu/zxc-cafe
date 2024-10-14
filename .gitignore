@@ -13,6 +13,7 @@ Icon
 # docker settings file
 docker/DJANGO_SETTINGS_MODULE
 */local.py
+*/env.py
 
 
 # Files that might appear on external disk
