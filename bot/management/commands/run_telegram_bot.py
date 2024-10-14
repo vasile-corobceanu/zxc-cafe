@@ -151,7 +151,7 @@ class Command(BaseCommand):
                 )
 
             order_items = await sync_to_async(list)(order.items.select_related('product').all())
-            total_price, free_drinks, used_free = await sync_to_async(order.total_price)()
+            total_price, used_free = await sync_to_async(order.total_price)()
             order_summary = '\n'.join([
                 f"- {item.product.name} - {item.product.price} MDL x {item.quantity}"
                 for item in order_items
@@ -171,6 +171,8 @@ class Command(BaseCommand):
         @client.on(events.CallbackQuery(data='go_to_menu'))
         async def go_to_menu(event):
             user_id = event.sender_id
+            message = await event.get_message()
+            await message.delete()
             if user_id in last_message_id:
                 await client.delete_messages(event.chat_id, [last_message_id[user_id]])
 
@@ -179,7 +181,6 @@ class Command(BaseCommand):
         @client.on(events.CallbackQuery(pattern='finish'))
         async def finish(event):
             user = await event.get_sender()
-
             c_order = current_order.get(user.id)
 
             if not c_order:
@@ -188,30 +189,49 @@ class Command(BaseCommand):
                 return
 
             customer = current_customer.get(user.id)
+
             if customer:
+                print('free', c_order.free_drinks)
+
+                # Deduct used free drinks from the customer's available free drinks
                 customer.coffees_free -= c_order.free_drinks
+
+                # Get the total number of coffees in the order
                 coffee_count = await sync_to_async(c_order.total_coffees)()
-                total_now = customer.coffees_count + coffee_count
+
+                # Calculate the number of paid coffees in the order
+                paid_coffees = coffee_count - c_order.free_drinks
+
+                # Update the customer's total paid coffees count
+                total_now = customer.coffees_count + paid_coffees
 
                 if total_now >= self.coffee_limit:
+                    # Calculate how many free coffees the customer has earned
                     free_coffee = int(total_now / self.coffee_limit)
-                    customer.coffees_count = total_now - free_coffee * self.coffee_limit
+                    print(total_now, free_coffee, self.coffee_limit)
+
+                    # Update the customer's paid coffees count (remainder after earning free coffees)
+                    customer.coffees_count = total_now - (free_coffee * self.coffee_limit)
+
+                    # Add the earned free coffees to the customer's account
                     customer.coffees_free += free_coffee
-                    message = f"🎉 Congratulations! You've earned {free_coffee} coffee! 🎉"
+
+                    message = f"🎉 Congratulations! You've earned {free_coffee} free coffee(s)! 🎉"
                     logging.info(message)
                     await client.send_message(customer.user_id, message)
-
                 else:
-                    customer.coffees_count += coffee_count
+                    # No free coffees earned; update the customer's paid coffees count
+                    customer.coffees_count = total_now
+
                 await sync_to_async(customer.save)()
+                c_order.customer = customer
 
             c_order.status = 'confirmed'
-            c_order.customer = customer
             c_order.is_anonymous = not customer
             await sync_to_async(c_order.save)()
             current_order.pop(user.id, None)
             current_customer.pop(user.id, None)
-            await event.edit(f"Comanda a fost finalizată cu succes!")
+            await event.edit("Comanda a fost finalizată cu succes!")
 
         @client.on(events.CallbackQuery(pattern='check_finish'))
         async def check_finish(event):
@@ -233,11 +253,14 @@ class Command(BaseCommand):
         async def use_free(event):
             user = await event.get_sender()
             customer = current_customer[user.id]
-
+            print(current_customer)
             if customer.coffees_free:
                 c_order = current_order.get(user.id)
-
-                if not c_order:
+                if c_order:
+                    c_order.customer = customer
+                    c_order.free_drinks = customer.coffees_free
+                    await sync_to_async(c_order.save)()
+                else:
                     c_order = await sync_to_async(Order.objects.create)(
                         status='pending'
                     )
@@ -245,18 +268,25 @@ class Command(BaseCommand):
                     await sync_to_async(c_order.save)()
                     current_order[user.id] = c_order
 
+            order_items = await sync_to_async(list)(c_order.items.select_related('product').all())
+            total_price, used_free = await sync_to_async(c_order.total_price)()
+            order_summary = '\n'.join([
+                f"- {item.product.name} - {item.product.price} MDL x {item.quantity}"
+                for item in order_items
+            ])
             buttons = [
-                Button.inline('Adauga produse', data="go_to_menu"),
+                Button.inline('Adaugă încā', data="go_to_menu"),
+                Button.inline('Finalizați comanda', data='check_finish')
             ]
-            message = "QR Code scanat!"
 
-            if current_order.get(user.id):
-                buttons.append(Button.inline('Finalizați comanda', data="finish"))
-
-            await event.respond(message, buttons=buttons)
+            message = await event.edit(f"Comanda curentă:\n{order_summary}\n"
+                                       f"Pret Total: {total_price}\n"
+                                       f"Gratis: {used_free} cafele\n\n",
+                                       buttons=buttons)
+            last_message_id[user.id] = message.id
 
         @client.on(events.NewMessage(pattern='/order'))
-        async def order(event):
+        async def add_order(event):
             user = await event.get_sender()
             user_id = user.id
             try:

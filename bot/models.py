@@ -65,14 +65,11 @@ class Order(models.Model):
         total = 0
         used_free = 0
         for item in OrderItem.objects.filter(order=self).select_related('product'):
+            print(self.free_drinks, item.quantity)
             if self.free_drinks == item.quantity:
-                self.free_drinks = 0
                 used_free += item.quantity
-                continue
             elif self.free_drinks > item.quantity:
-                self.free_drinks -= item.quantity
                 used_free += item.quantity
-                continue
             elif self.free_drinks < item.quantity:
                 quantity = item.quantity - self.free_drinks
                 total += quantity * item.product.price
@@ -80,7 +77,7 @@ class Order(models.Model):
             else:
                 total += item.quantity * item.product.price
 
-        return total, self.free_drinks, used_free
+        return total, used_free
 
 
 class OrderItem(models.Model):
