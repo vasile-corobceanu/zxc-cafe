@@ -3,7 +3,7 @@
 {% block result_list %}
     {{ block.super }}
     {% if total_paid_sum %}
-        <div class="totals-row" style="margin-top: 1em; text-align: right; font-size: 1em;">
+        <div class="totals-row" style="margin-top: 1em;margin-bottom: 1em; text-align: right; font-size: 1em;">
             <strong>Total Paid Sum: {{ total_paid_sum|floatformat:2 }}</strong>
         </div>
     {% endif %}
