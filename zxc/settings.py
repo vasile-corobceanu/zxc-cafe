@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,12 +29,21 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
+    "unfold.contrib.filters",  # optional, if special filters are needed
+    "unfold.contrib.forms",  # optional, if special form elements are needed
+    "unfold.contrib.inlines",  # optional, if special inlines are needed
+    "unfold.contrib.import_export",  # optional, if django-import-export package is used
+    "unfold.contrib.guardian",  # optional, if django-guardian package is used
+    "unfold.contrib.simple_history",  # optional, if django-simple-history package is used
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'bot.apps.BotConfig',
 ]
 
@@ -153,3 +162,64 @@ LOGGING = {
         },
     },
 }
+
+UNFOLD = {
+    'SITE_TITLE': 'Coffee Shop Admin',
+    'SITE_HEADER': 'Coffee Shop Administration',
+    'INDEX_TITLE': 'Dashboard',
+    'LOGIN_LOGO': 'img/login_logo.png',
+    'MAIN_LOGO': 'img/main_logo.png',
+    'FAVICON': 'img/favicon.ico',
+    'SHOW_COLLAPSE': True,
+    'SHOW_QUICK_FILTER': True,
+    'ENABLE_CHARTS': True,
+    'CUSTOM_CSS': 'css/custom_admin.css',
+    'CUSTOM_JS': 'js/custom_admin.js',
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": False,
+    'MENU': [
+        {'label': 'Dashboard', 'url': '/admin/', 'icon': 'fa-home'},
+        {'label': 'Orders', 'model': 'your_app.Order', 'icon': 'fa-shopping-cart'},
+        {'label': 'Products', 'model': 'your_app.Product', 'icon': 'fa-coffee'},
+        {'label': 'Customers', 'model': 'your_app.Customer', 'icon': 'fa-users'},
+    ],
+    "DASHBOARD_CALLBACK": "bot.views.dashboard_callback",
+    'DASHBOARD_CHARTS': [
+        {
+            'title': 'Today\'s Orders',
+            'chart_type': 'line',
+            'data_source': 'bot.admin_utils.get_todays_orders_chart_data',
+            'options': {
+                'scales': {
+                    'xAxes': [{
+                        'type': 'time',
+                        'time': {
+                            'unit': 'hour',
+                            'displayFormats': {
+                                'hour': 'HH:mm',
+                            },
+                        },
+                        'distribution': 'linear',
+                    }],
+                    'yAxes': [{
+                        'ticks': {
+                            'beginAtZero': True,
+                            'stepSize': 1,
+                        },
+                    }],
+                },
+                'responsive': True,
+            },
+        },
+    ],
+
+}
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_DIRS = [BASE_DIR, 'static']
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR, 'media'
+
+LOGIN_URL = 'admin:login'
+LOGOUT_URL = 'admin:logout'

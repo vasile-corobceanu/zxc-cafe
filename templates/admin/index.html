@@ -1,0 +1,29 @@
+{% extends 'unfold/layouts/base_simple.html' %}
+
+{% load cache humanize i18n unfold %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}
+    {% if subtitle %}
+        {{ subtitle }} |
+    {% endif %}
+
+    {{ title }} | {{ site_title|default:_('Django site admin') }}
+{% endblock %}
+
+{% block branding %}
+    <h1 id="site-name">
+        <a href="{% url 'admin:index' %}">
+            {{ site_header|default:_('Django administration') }}
+        </a>
+    </h1>
+{% endblock %}
+
+{% block content %}
+    {% component "unfold/components/card.html" with title="Orders Over the Last Week" %}
+        <!-- Line Chart for Orders -->
+        {% component "unfold/components/chart/line.html" with chart_data=line_chart_data card_included=1 %}
+        {% endcomponent %}
+    {% endcomponent %}
+{% endblock %}

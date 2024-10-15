@@ -1,19 +1,24 @@
 from django.contrib import admin
-from django.db.models import Sum
+from django.contrib.auth.models import User, Group
+from django.db.models import ExpressionWrapper, F, DecimalField
 from django.utils import timezone
 from pytz import timezone as pytz_timezone
+from unfold.admin import ModelAdmin, TabularInline
 
 from .filters import BaristaUserFilter
 from .models import Category, Product, Customer, Order, OrderItem
 
+admin.site.unregister(User)
+admin.site.unregister(Group)
 
-class OrderItemInline(admin.TabularInline):
+
+class OrderItemInline(TabularInline):
     model = OrderItem
     extra = 1
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(ModelAdmin):
     list_filter = ('created_at', BaristaUserFilter, 'free_drinks', 'products__category')
     list_display = (
         'id',
@@ -55,34 +60,53 @@ class OrderAdmin(admin.ModelAdmin):
     user_created.admin_order_field = 'user_created'
     user_created.short_description = 'User Created'
 
-    def changelist_view(self, request, extra_context=None):
-        response = super().changelist_view(request, extra_context)
-        try:
-            qs = response.context_data['cl'].queryset
-            total = qs.aggregate(total_paid_sum=Sum('total_paid'))['total_paid_sum'] or 0
-            if extra_context is None:
-                extra_context = {}
-            extra_context['total_paid_sum'] = total
-            response.context_data.update(extra_context)
-        except (AttributeError, KeyError):
-            pass
-        return response
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.annotate(
+            order_total_calc=ExpressionWrapper(
+                F('total_paid'),
+                output_field=DecimalField()
+            )
+        )
+        return qs
+
+    list_totals = {
+        'order_total': {
+            'field': 'order_total_calc',
+            'position': 'footer',
+        },
+        'total_paid': {
+            'field': 'total_paid',
+            'position': 'footer',
+        },
+    }
+
+    def order_total(self, obj):
+        return obj.order_total_calc
+
+    order_total.short_description = 'Order Total'
+
+    def total_paid(self, obj):
+        return obj.total_paid or 0
+
+    total_paid.short_description = 'Total Paid'
+    total_paid.admin_order_field = 'total_paid'
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ModelAdmin):
     list_display = ['name']
     search_fields = ['name']
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ModelAdmin):
     list_display = ['name', 'category', 'price']
     list_filter = ['category']
     search_fields = ['name']
 
 
 @admin.register(Customer)
-class CustomerAdmin(admin.ModelAdmin):
+class CustomerAdmin(ModelAdmin):
     list_display = ['username', 'user_id', 'coffees_count']
     search_fields = ['username', 'user_id']
