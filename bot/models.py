@@ -57,6 +57,7 @@ class Order(models.Model):
     is_anonymous = models.BooleanField(default=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     free_drinks = models.IntegerField(default=0)
+    total_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f"Order {self.id} - {'Anonymous' if self.is_anonymous else self.customer}"
@@ -69,7 +70,6 @@ class Order(models.Model):
         total = 0
         used_free = 0
         for item in OrderItem.objects.filter(order=self).select_related('product'):
-            print(self.free_drinks, item.quantity)
             if self.free_drinks == item.quantity:
                 used_free += item.quantity
             elif self.free_drinks > item.quantity:
@@ -82,6 +82,13 @@ class Order(models.Model):
                 total += item.quantity * item.product.price
 
         return total, used_free
+
+    def confirm_order(self):
+        if self.status != 'confirmed':
+            total, _ = self.total_price()
+            self.total_paid = total
+            self.status = 'confirmed'
+            self.save()
 
 
 class OrderItem(models.Model):

@@ -257,36 +257,19 @@ class Command(BaseCommand):
             customer = current_customer.get(user.id)
 
             if customer:
-                print('free', c_order.free_drinks)
-
-                # Deduct used free drinks from the customer's available free drinks
                 customer.coffees_free -= c_order.free_drinks
-
-                # Get the total number of coffees in the order
                 coffee_count = await sync_to_async(c_order.total_coffees)()
-
-                # Calculate the number of paid coffees in the order
                 paid_coffees = coffee_count - c_order.free_drinks
-
-                # Update the customer's total paid coffees count
                 total_now = customer.coffees_count + paid_coffees
 
                 if total_now >= self.coffee_limit:
-                    # Calculate how many free coffees the customer has earned
                     free_coffee = int(total_now / self.coffee_limit)
-                    print(total_now, free_coffee, self.coffee_limit)
-
-                    # Update the customer's paid coffees count (remainder after earning free coffees)
                     customer.coffees_count = total_now - (free_coffee * self.coffee_limit)
-
-                    # Add the earned free coffees to the customer's account
                     customer.coffees_free += free_coffee
-
                     message = f"🎉 Congratulations! You've earned {free_coffee} free coffee(s)! 🎉"
                     logging.info(message)
                     await client.send_message(customer.user_id, message)
                 else:
-                    # No free coffees earned; update the customer's paid coffees count
                     customer.coffees_count = total_now
 
                 await sync_to_async(customer.save)()
@@ -294,6 +277,8 @@ class Command(BaseCommand):
 
             c_order.status = 'confirmed'
             c_order.is_anonymous = not customer
+            total_price, used_free = await sync_to_async(c_order.total_price)()
+            c_order.total_paid = total_price
             await sync_to_async(c_order.save)()
             current_order.pop(user.id, None)
             current_customer.pop(user.id, None)

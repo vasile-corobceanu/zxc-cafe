@@ -21,6 +21,8 @@ class OrderAdmin(admin.ModelAdmin):
         'created_at_chisinau',
         'customer',
         'status',
+        'order_total',
+        'total_paid',
     )
     inlines = [OrderItemInline]
     search_fields = ['id', 'customer__username', 'customer__user_id']
@@ -39,6 +41,12 @@ class OrderAdmin(admin.ModelAdmin):
         return ', '.join(product_names)
 
     products_list.short_description = 'Products'
+
+    def order_total(self, obj):
+        total, _ = obj.total_price()
+        return '{:.2f}'.format(total)
+
+    order_total.short_description = 'Total Price'
 
     def user_created(self, obj):
         return obj.user_created.username if obj.user_created else 'Anonymous'
