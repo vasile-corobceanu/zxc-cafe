@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils import timezone
+from pytz import timezone as pytz_timezone
 
 from .models import Category, Product, Customer, Order, OrderItem
 
@@ -10,9 +12,38 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'customer', 'created_at', 'is_anonymous']
+    list_filter = ('created_at', 'user_created', 'free_drinks', 'products__category')
+    list_display = (
+        'id',
+        'products_list',
+        'user_created',
+        'created_at_chisinau',
+        'customer',
+        'status',
+    )
     inlines = [OrderItemInline]
     search_fields = ['id', 'customer__username', 'customer__user_id']
+    list_display_links = ('products_list',)
+
+    def created_at_chisinau(self, obj):
+        chisinau_tz = pytz_timezone('Europe/Chisinau')
+        return timezone.localtime(obj.created_at, chisinau_tz).strftime('%Y-%m-%d %H:%M:%S')
+
+    created_at_chisinau.admin_order_field = 'created_at'
+    created_at_chisinau.short_description = 'Created At (Chisinau)'
+
+    def products_list(self, obj):
+        products = obj.items.select_related('product')
+        product_names = [item.product.name for item in products]
+        return ', '.join(product_names)
+
+    products_list.short_description = 'Products'
+
+    def user_created(self, obj):
+        return obj.user_created.username if obj.user_created else 'Anonymous'
+
+    user_created.admin_order_field = 'user_created'
+    user_created.short_description = 'User Created'
 
 
 @admin.register(Category)
@@ -32,5 +63,3 @@ class ProductAdmin(admin.ModelAdmin):
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ['username', 'user_id', 'coffees_count']
     search_fields = ['username', 'user_id']
-
-# Optionally register OrderItem if needed

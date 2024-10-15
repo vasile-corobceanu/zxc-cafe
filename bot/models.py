@@ -41,7 +41,7 @@ class Customer(models.Model):
         return self.username or f"User {self.user_id}"
 
     def is_barista(self):
-        return self.role == 'barista'
+        return self.role == self.BARISTA
 
 
 class Order(models.Model):
@@ -49,6 +49,8 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
     )
+    user_created = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='user_created')
     customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
     products = models.ManyToManyField(Product, through='OrderItem')
     created_at = models.DateTimeField(auto_now_add=True)

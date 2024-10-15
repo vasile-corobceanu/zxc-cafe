@@ -4,6 +4,7 @@ import re
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from telethon import TelegramClient, events, Button
 
 from bot.models import Customer, Category, Order, Product, OrderItem
@@ -64,7 +65,7 @@ class Command(BaseCommand):
                 qr_image = generate_qr_code(bot_username, user_id)
                 await client.send_file(event.chat_id, qr_image, caption=f"QR code for @{username}")
             else:
-                if customer.role == customer.BARISTA:
+                if customer.is_barista():
                     await menu(event)
                     return
 
@@ -146,8 +147,10 @@ class Command(BaseCommand):
             order = current_order.get(user.id)
 
             if not order:
+                barista = await sync_to_async(Customer.objects.get)(user_id=user.id)
                 order = await sync_to_async(Order.objects.create)(
-                    status='pending'
+                    status='pending',
+                    user_created=barista,
                 )
                 current_order[user.id] = order
 
@@ -372,6 +375,31 @@ class Command(BaseCommand):
                 customer = None
 
             if customer:
+                if customer.is_barista():
+                    today = timezone.now().date()
+
+                    orders = await sync_to_async(list)(Order.objects.filter(created_at__date=today))
+
+                    if not orders:
+                        await event.respond("Nu există comenzi pentru astăzi.")
+                        return
+
+                    # Build the message
+                    message = "Comenzile de astăzi:\n\n"
+                    for order in orders:
+                        order_items = await sync_to_async(list)(order.items.select_related('product').all())
+                        order_summary = '\n'.join([
+                            f"- {item.product.name} x {item.quantity}" for item in order_items
+                        ])
+                        total_price, used_free = await sync_to_async(order.total_price)()
+                        customer_info = f"{order.customer.first_name}" if order.customer else "Anonim"
+                        message += (f"Comanda #{order.id}:\n"
+                                    f"{order_summary}\n"
+                                    f"Total: {total_price} MDL\n\n")
+
+                    await event.respond(message)
+                    return
+
                 purchases_left = (
                     self.coffee_limit - (customer.coffees_count % self.coffee_limit)
                     if customer.coffees_count % self.coffee_limit != 0 else 0
