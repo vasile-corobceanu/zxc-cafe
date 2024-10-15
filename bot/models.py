@@ -83,13 +83,6 @@ class Order(models.Model):
 
         return total, used_free
 
-    def confirm_order(self):
-        if self.status != 'confirmed':
-            total, _ = self.total_price()
-            self.total_paid = total
-            self.status = 'confirmed'
-            self.save()
-
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')

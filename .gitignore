@@ -100,3 +100,4 @@ celerybeat-schedule
 
 user_data
 extension
+coffee_bot.session

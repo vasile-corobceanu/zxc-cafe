@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Sum
 from django.utils import timezone
 from pytz import timezone as pytz_timezone
 
@@ -37,7 +38,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     def products_list(self, obj):
         products = obj.items.select_related('product')
-        product_names = [item.product.name for item in products]
+        product_names = [f'{item.quantity}-{item.product.name}' for item in products]
         return ', '.join(product_names)
 
     products_list.short_description = 'Products'
@@ -53,6 +54,19 @@ class OrderAdmin(admin.ModelAdmin):
 
     user_created.admin_order_field = 'user_created'
     user_created.short_description = 'User Created'
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context)
+        try:
+            qs = response.context_data['cl'].queryset
+            total = qs.aggregate(total_paid_sum=Sum('total_paid'))['total_paid_sum'] or 0
+            if extra_context is None:
+                extra_context = {}
+            extra_context['total_paid_sum'] = total
+            response.context_data.update(extra_context)
+        except (AttributeError, KeyError):
+            pass
+        return response
 
 
 @admin.register(Category)
