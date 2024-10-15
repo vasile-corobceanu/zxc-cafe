@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from pytz import timezone as pytz_timezone
 
+from .filters import BaristaUserFilter
 from .models import Category, Product, Customer, Order, OrderItem
 
 
@@ -12,7 +13,7 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_filter = ('created_at', 'user_created', 'free_drinks', 'products__category')
+    list_filter = ('created_at', BaristaUserFilter, 'free_drinks', 'products__category')
     list_display = (
         'id',
         'products_list',
