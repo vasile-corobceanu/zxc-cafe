@@ -38,7 +38,7 @@ class Customer(models.Model):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
 
     def __str__(self):
-        return self.username or f"User {self.user_id}"
+        return self.username or self.first_name or f"User {self.user_id}"
 
     def is_barista(self):
         return self.role == self.BARISTA
