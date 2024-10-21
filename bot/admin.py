@@ -55,7 +55,7 @@ class OrderAdmin(ModelAdmin):
     order_total.short_description = 'Total Price'
 
     def user_created(self, obj):
-        return obj.user_created.username if obj.user_created else 'Anonymous'
+        return obj.user_created.first_name if obj.user_created else 'Anonymous'
 
     user_created.admin_order_field = 'user_created'
     user_created.short_description = 'User Created'
@@ -108,5 +108,5 @@ class ProductAdmin(ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(ModelAdmin):
-    list_display = ['username', 'user_id', 'coffees_count']
+    list_display = ['first_name', 'username', 'user_id', 'coffees_count']
     search_fields = ['username', 'user_id']
