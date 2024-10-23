@@ -371,16 +371,18 @@ class Command(BaseCommand):
 
                     # Build the message
                     message = "Comenzile de astăzi:\n\n"
+                    total = 0
                     for order in orders:
                         order_items = await sync_to_async(list)(order.items.select_related('product').all())
                         order_summary = '\n'.join([
                             f"- {item.product.name} x {item.quantity}" for item in order_items
                         ])
                         total_price, used_free = await sync_to_async(order.total_price)()
-                        customer_info = f"{order.customer.first_name}" if order.customer else "Anonim"
+                        total += total_price
                         message += (f"Comanda #{order.id}:\n"
                                     f"{order_summary}\n"
-                                    f"Total: {total_price} MDL\n\n")
+                                    f"Total: {total_price} MDL\n\n"
+                                    f"Total azi: {total} MDL\n\n")
 
                     await event.respond(message)
                     return
