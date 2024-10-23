@@ -363,7 +363,7 @@ class Command(BaseCommand):
                 if customer.is_barista():
                     today = timezone.now().date()
 
-                    orders = await sync_to_async(list)(Order.objects.filter(created_at__date=today))
+                    orders = await sync_to_async(list)(Order.objects.order_by('id').filter(created_at__date=today))
 
                     if not orders:
                         await event.respond("Nu există comenzi pentru astăzi.")
@@ -372,6 +372,7 @@ class Command(BaseCommand):
                     # Build the message
                     message = "Comenzile de astăzi:\n\n"
                     total = 0
+                    count = 0
                     for order in orders:
                         order_items = await sync_to_async(list)(order.items.select_related('product').all())
                         order_summary = '\n'.join([
@@ -379,11 +380,12 @@ class Command(BaseCommand):
                         ])
                         total_price, used_free = await sync_to_async(order.total_price)()
                         total += total_price
-                        message += (f"Comanda #{order.id}:\n"
+                        count += 1
+                        message += (f"Comanda #{count}:\n"
                                     f"{order_summary}\n"
-                                    f"Total: {total_price} MDL\n\n"
-                                    f"Total azi: {total} MDL\n\n")
+                                    f"Total: {total_price} MDL\n\n")
 
+                    message += f"Total azi: {total} MDL\n\n"
                     await event.respond(message)
                     return
 
