@@ -18,7 +18,13 @@ admin.site.unregister(Group)
 
 class OrderItemInline(TabularInline):
     model = OrderItem
-    extra = 1
+    extra = 0
+    readonly_fields = ('product', 'quantity',)
+
+
+class ProductInline(TabularInline):
+    model = Product
+    extra = 0
 
 
 class OrderInline(TabularInline):
@@ -152,6 +158,7 @@ class OrderAdmin(ModelAdmin):
 class CategoryAdmin(ModelAdmin):
     list_display = ['name']
     search_fields = ['name']
+    inlines = [ProductInline]
 
 
 @admin.register(Product)
