@@ -137,8 +137,8 @@ from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Q
 
 @admin.register(ProductSalesReport)
 class ProductSalesReportAdmin(admin.ModelAdmin):
-    list_display = ('name', 'total_quantity_sold', 'total_sales')
-    list_filter = (DateRangeFilter,)
+    list_display = ('name', 'category', 'total_quantity_sold', 'total_sales')
+    list_filter = ('category', DateRangeFilter,)
 
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context)
