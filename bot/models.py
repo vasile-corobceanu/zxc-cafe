@@ -33,7 +33,7 @@ class Customer(models.Model):
     username = models.CharField(max_length=100, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True, null=True)
     qr_code = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    coffees_count = models.IntegerField(default=0)
+    coffees_count = models.IntegerField(default=0, help_text="Number of coffees to reach free coffee")
     coffees_free = models.IntegerField(default=0)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='customer')
 

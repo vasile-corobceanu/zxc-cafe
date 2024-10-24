@@ -1,5 +1,11 @@
+from datetime import timedelta
+
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.models import User, Group
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Q, IntegerField
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 from pytz import timezone as pytz_timezone
 from unfold.admin import ModelAdmin, TabularInline
 
@@ -106,13 +112,38 @@ class ProductAdmin(ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(ModelAdmin):
-    list_display = ['first_name', 'username', 'user_id', 'coffees_count']
+    list_display = ['first_name', 'username', 'coffees_count', 'coffees_free', 'total_paid', 'total_quantity']
     search_fields = ['username', 'user_id']
+    list_filter = ['role']
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
 
-from django.contrib.admin import SimpleListFilter
-from django.utils import timezone
-from datetime import timedelta
+        qs = qs.annotate(
+            total_paid_sum=Coalesce(
+                Sum('order__total_paid', filter=Q(order__customer=F('id'))),
+                0,
+                output_field=DecimalField()
+            ),
+            total_quantity_sum=Coalesce(
+                Sum('order__items__quantity', filter=Q(order__customer=F('id'))),
+                0,
+                output_field=IntegerField()
+            ), )
+
+        return qs
+
+    def total_paid(self, obj):
+        return obj.total_paid_sum
+
+    total_paid.short_description = 'Total Paid'
+    total_paid.admin_order_field = 'total_paid_sum'
+
+    def total_quantity(self, obj):
+        return obj.total_quantity_sum
+
+    total_quantity.short_description = 'Total Quantity'
+    total_quantity.admin_order_field = 'total_quantity_sum'
 
 
 class DateRangeFilter(SimpleListFilter):
@@ -129,10 +160,6 @@ class DateRangeFilter(SimpleListFilter):
     def queryset(self, request, queryset):
         # We'll handle filtering in the ModelAdmin's get_queryset
         return queryset
-
-
-from django.contrib import admin
-from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Q
 
 
 @admin.register(ProductSalesReport)
