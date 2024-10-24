@@ -91,3 +91,10 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+
+
+class ProductSalesReport(Product):
+    class Meta:
+        proxy = True
+        verbose_name = 'Product Sales Report'
+        verbose_name_plural = 'Product Sales Reports'

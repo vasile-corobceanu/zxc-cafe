@@ -1,12 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.models import User, Group
-from django.db.models import ExpressionWrapper, F, DecimalField
-from django.utils import timezone
 from pytz import timezone as pytz_timezone
 from unfold.admin import ModelAdmin, TabularInline
 
 from .filters import BaristaUserFilter
-from .models import Category, Product, Customer, Order, OrderItem
+from .models import Category, Product, Customer, Order, OrderItem, ProductSalesReport
 
 admin.site.unregister(User)
 admin.site.unregister(Group)
@@ -110,3 +108,91 @@ class ProductAdmin(ModelAdmin):
 class CustomerAdmin(ModelAdmin):
     list_display = ['first_name', 'username', 'user_id', 'coffees_count']
     search_fields = ['username', 'user_id']
+
+
+from django.contrib.admin import SimpleListFilter
+from django.utils import timezone
+from datetime import timedelta
+
+
+class DateRangeFilter(SimpleListFilter):
+    title = 'Date Range'
+    parameter_name = 'date_range'
+
+    def lookups(self, request, model_admin):
+        return [
+            ('today', 'Today'),
+            ('this_week', 'This Week'),
+            ('this_month', 'This Month'),
+        ]
+
+    def queryset(self, request, queryset):
+        # We'll handle filtering in the ModelAdmin's get_queryset
+        return queryset
+
+
+from django.contrib import admin
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Q
+
+
+@admin.register(ProductSalesReport)
+class ProductSalesReportAdmin(admin.ModelAdmin):
+    list_display = ('name', 'total_quantity_sold', 'total_sales')
+    list_filter = (DateRangeFilter,)
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context)
+        try:
+            qs = response.context_data['cl'].queryset
+            total_sales_sum = qs.aggregate(total=Sum('total_sales'))['total'] or 0
+            response.context_data['total_sales_sum'] = total_sales_sum
+        except (AttributeError, KeyError):
+            pass
+        return response
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        date_range = request.GET.get('date_range')
+
+        if date_range == 'today':
+            today = timezone.now().date()
+            start_date = end_date = today
+        elif date_range == 'this_week':
+            today = timezone.now().date()
+            start_date = today - timedelta(days=today.weekday())
+            end_date = today
+        elif date_range == 'this_month':
+            today = timezone.now().date()
+            start_date = today.replace(day=1)
+            end_date = today
+        else:
+            today = timezone.now().date()
+            start_date = end_date = today
+
+        qs = qs.annotate(
+            total_quantity_sold=Sum(
+                'orderitem__quantity',
+                filter=Q(orderitem__order__created_at__date__gte=start_date) & Q(
+                    orderitem__order__created_at__date__lte=end_date)
+            ),
+            total_sales=Sum(
+                ExpressionWrapper(F('orderitem__quantity') * F('price'), output_field=DecimalField()),
+                filter=Q(orderitem__order__created_at__date__gte=start_date) & Q(
+                    orderitem__order__created_at__date__lte=end_date)
+            )
+        )
+
+        qs = qs.filter(total_quantity_sold__gt=0)
+        qs = qs.order_by('-total_sales')
+
+        return qs
+
+    def total_quantity_sold(self, obj):
+        return obj.total_quantity_sold or 0
+
+    total_quantity_sold.short_description = 'Total Quantity Sold'
+
+    def total_sales(self, obj):
+        return obj.total_sales or 0
+
+    total_sales.short_description = 'Total Sales'
