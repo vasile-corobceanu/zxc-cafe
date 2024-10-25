@@ -19,7 +19,7 @@ admin.site.unregister(Group)
 class OrderItemInline(TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ('product', 'quantity',)
+    readonly_fields = ('product',)
 
 
 class ProductInline(TabularInline):
