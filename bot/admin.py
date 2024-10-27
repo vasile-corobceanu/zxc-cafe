@@ -100,7 +100,7 @@ class OrderAdmin(ModelAdmin):
         return timezone.localtime(obj.created_at, chisinau_tz).strftime('%Y-%m-%d %H:%M:%S')
 
     created_at_chisinau.admin_order_field = 'created_at'
-    created_at_chisinau.short_description = 'Created At (Chisinau)'
+    created_at_chisinau.short_description = 'Created At'
 
     def products_list(self, obj):
         products = obj.items.select_related('product')
@@ -121,38 +121,6 @@ class OrderAdmin(ModelAdmin):
     user_created.admin_order_field = 'user_created'
     user_created.short_description = 'User Created'
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        qs = qs.annotate(
-            order_total_calc=ExpressionWrapper(
-                F('total_paid'),
-                output_field=DecimalField()
-            )
-        )
-        return qs
-
-    list_totals = {
-        'order_total': {
-            'field': 'order_total_calc',
-            'position': 'footer',
-        },
-        'total_paid': {
-            'field': 'total_paid',
-            'position': 'footer',
-        },
-    }
-
-    def order_total(self, obj):
-        return obj.order_total_calc
-
-    order_total.short_description = 'Order Total'
-
-    def total_paid(self, obj):
-        return obj.total_paid or 0
-
-    total_paid.short_description = 'Total Paid'
-    total_paid.admin_order_field = 'total_paid'
-
     def changelist_view(self, request, extra_context=None):
         has_created_at_filter = any(param.startswith('created_at__gte') for param in request.GET)
 
@@ -161,8 +129,16 @@ class OrderAdmin(ModelAdmin):
             q['created_at__gte'] = timezone.now().date()
             request.GET = q
             request.META['QUERY_STRING'] = request.GET.urlencode()
+        response = super().changelist_view(request, extra_context=extra_context)
 
-        return super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data['cl'].queryset
+            total = qs.aggregate(Sum('total_paid'))['total_paid__sum'] or 0
+            response.context_data['total_price'] = total
+        except (AttributeError, KeyError):
+            pass
+
+        return response
 
 
 @admin.register(Category)

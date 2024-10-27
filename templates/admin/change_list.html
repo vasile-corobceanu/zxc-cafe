@@ -1,1 +1,17 @@
 {% extends "admin/change_list.html" %}
+
+{% block pagination %}
+    {% block subtotal %}
+        <div class="total-footer" style="margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
+            <table class="total-table" style="width: 100%; font-weight: bold; border-collapse: collapse;">
+                <tr>
+                    <td style="text-align: right; padding-right: 10px;">
+                        Total: {{ total_price|floatformat:2 }}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    {% endblock %}
+
+    {{ block.super }}
+{% endblock %}
