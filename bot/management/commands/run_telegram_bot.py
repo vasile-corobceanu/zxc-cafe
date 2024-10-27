@@ -96,6 +96,32 @@ class Command(BaseCommand):
 
             await event.respond("Select category:", buttons=buttons)
 
+        @client.on(events.NewMessage(pattern='/now'))
+        async def now(event):
+            user = await event.get_sender()
+            customer = await self.get_or_create_user(user)
+            if not customer.is_barista():
+                return
+
+            order = current_order.get(user.id)
+            if not order:
+                await event.respond('Nu sunt produse adaugate!')
+                return
+
+            order_items = await sync_to_async(list)(order.items.select_related('product').all())
+            total_price, used_free = await sync_to_async(order.total_price)()
+            order_summary = '\n'.join([
+                f"{item.product.name} x {item.quantity}" for item in order_items
+            ])
+            buttons = [
+                Button.inline('Adaugă încā', data="go_to_menu"),
+                Button.inline('Finalizați comanda', data='check_finish')
+            ]
+            await event.respond(f"Comanda curentă:\n{order_summary}\n"
+                                f"Pret Total: {total_price}\n"
+                                f"Gratis: {used_free} cafele\n\n",
+                                buttons=buttons)
+
         @client.on(events.CallbackQuery(data=re.compile('category_(\\d+)')))
         async def category_selected(event):
             category_id = int(event.data_match.group(1))
@@ -259,20 +285,22 @@ class Command(BaseCommand):
             if customer:
                 customer.coffees_free -= c_order.free_drinks
                 coffee_count = await sync_to_async(c_order.total_coffees)()
-                paid_coffees = coffee_count - c_order.free_drinks
-                total_now = customer.coffees_count + paid_coffees
 
-                if total_now >= self.coffee_limit:
-                    free_coffee = int(total_now / self.coffee_limit)
-                    customer.coffees_count = total_now - (free_coffee * self.coffee_limit)
-                    customer.coffees_free += free_coffee
-                    message = f"🎉 Congratulations! You've earned {free_coffee} free coffee(s)! 🎉"
-                    logging.info(message)
-                    await client.send_message(customer.user_id, message)
-                else:
-                    customer.coffees_count = total_now
+                if not coffee_count:
+                    paid_coffees = coffee_count - c_order.free_drinks
+                    total_now = customer.coffees_count + paid_coffees
 
-                await sync_to_async(customer.save)()
+                    if total_now >= self.coffee_limit:
+                        free_coffee = int(total_now / self.coffee_limit)
+                        customer.coffees_count = total_now - (free_coffee * self.coffee_limit)
+                        customer.coffees_free += free_coffee
+                        message = f"🎉 Congratulations! You've earned {free_coffee} free coffee(s)! 🎉"
+                        logging.info(message)
+                        await client.send_message(customer.user_id, message)
+                    else:
+                        customer.coffees_count = total_now
+
+                    await sync_to_async(customer.save)()
                 c_order.customer = customer
 
             c_order.status = 'confirmed'
@@ -282,12 +310,22 @@ class Command(BaseCommand):
             await sync_to_async(c_order.save)()
             current_order.pop(user.id, None)
             current_customer.pop(user.id, None)
-            await event.edit("Comanda a fost finalizată cu succes!")
+            order_items = await sync_to_async(list)(c_order.items.select_related('product').all())
+            order_summary = '\n'.join([
+                f"- {item.product.name} x {item.quantity}" for item in order_items
+            ])
+            await event.edit(f"Comanda a fost adaugata cu succes!\n{order_summary}\nPret Total: {total_price}")
 
         @client.on(events.CallbackQuery(pattern='check_finish'))
         async def check_finish(event):
             user = await event.get_sender()
-            if current_customer.get(user.id):
+            c_order = current_order.get(user.id)
+            if c_order:
+                coffee_count = await sync_to_async(c_order.total_coffees)()
+            else:
+                coffee_count = 0
+
+            if current_customer.get(user.id) or not coffee_count:
                 await finish(event)
                 return
             buttons = [
@@ -370,22 +408,20 @@ class Command(BaseCommand):
                         return
 
                     # Build the message
-                    message = "Comenzile de astăzi:\n\n"
+                    message = "Comenzile de astăzi:\n"
                     total = 0
                     count = 0
                     for order in orders:
                         order_items = await sync_to_async(list)(order.items.select_related('product').all())
-                        order_summary = '\n'.join([
-                            f"- {item.product.name} x {item.quantity}" for item in order_items
+                        order_summary = ', '.join([
+                            f"{item.product.name} x {item.quantity}" for item in order_items
                         ])
                         total_price, used_free = await sync_to_async(order.total_price)()
                         total += total_price
                         count += 1
-                        message += (f"Comanda #{count}:\n"
-                                    f"{order_summary}\n"
-                                    f"Total: {total_price} MDL\n\n")
+                        message += f"#{count}: {order_summary} = {total_price}\n"
 
-                    message += f"Total azi: {total} MDL\n\n"
+                    message += f"\nTotal azi: {total} MDL\n\n"
                     await event.respond(message)
                     return
 
