@@ -266,12 +266,17 @@ class ProductSalesReportAdmin(admin.ModelAdmin):
             today = timezone.now().date()
             start_date = end_date = today
 
-        qs = qs.filter(
-            orderitem__order__status='confirmed', orderitem__order__created_at__date__gte=start_date,
-            orderitem__order__created_at__date__lte=end_date
-        ).annotate(
-            total_quantity_sold=Sum('orderitem__quantity'),
-            total_sales=Sum('orderitem__order__total_paid', output_field=DecimalField())
+        qs = qs.filter(orderitem__order__status='confirmed').annotate(
+            total_quantity_sold=Sum(
+                'orderitem__quantity',
+                filter=Q(orderitem__order__created_at__date__gte=start_date) & Q(
+                    orderitem__order__created_at__date__lte=end_date)
+            ),
+            total_sales=Sum(
+                ExpressionWrapper(F('orderitem__quantity') * F('price'), output_field=DecimalField()),
+                filter=Q(orderitem__order__created_at__date__gte=start_date) & Q(
+                    orderitem__order__created_at__date__lte=end_date)
+            )
         )
 
         qs = qs.filter(total_quantity_sold__gt=0)
