@@ -80,7 +80,7 @@ class OrderInline(TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(ModelAdmin):
-    list_filter = ('created_at', BaristaUserFilter, 'free_drinks', 'products__category')
+    list_filter = ('created_at', 'products__category', 'status', BaristaUserFilter, 'free_drinks',)
     list_display = (
         'id',
         'products_list',
@@ -152,6 +152,17 @@ class OrderAdmin(ModelAdmin):
 
     total_paid.short_description = 'Total Paid'
     total_paid.admin_order_field = 'total_paid'
+
+    def changelist_view(self, request, extra_context=None):
+        has_created_at_filter = any(param.startswith('created_at__gte') for param in request.GET)
+
+        if not has_created_at_filter:
+            q = request.GET.copy()
+            q['created_at__gte'] = timezone.now().date()
+            request.GET = q
+            request.META['QUERY_STRING'] = request.GET.urlencode()
+
+        return super().changelist_view(request, extra_context=extra_context)
 
 
 @admin.register(Category)
@@ -255,22 +266,16 @@ class ProductSalesReportAdmin(admin.ModelAdmin):
             today = timezone.now().date()
             start_date = end_date = today
 
-        qs = qs.annotate(
-            total_quantity_sold=Sum(
-                'orderitem__quantity',
-                filter=Q(orderitem__order__created_at__date__gte=start_date) & Q(
-                    orderitem__order__created_at__date__lte=end_date)
-            ),
-            total_sales=Sum(
-                ExpressionWrapper(F('orderitem__quantity') * F('price'), output_field=DecimalField()),
-                filter=Q(orderitem__order__created_at__date__gte=start_date) & Q(
-                    orderitem__order__created_at__date__lte=end_date)
-            )
+        qs = qs.filter(
+            orderitem__order__status='confirmed', orderitem__order__created_at__date__gte=start_date,
+            orderitem__order__created_at__date__lte=end_date
+        ).annotate(
+            total_quantity_sold=Sum('orderitem__quantity'),
+            total_sales=Sum('orderitem__order__total_paid', output_field=DecimalField())
         )
 
         qs = qs.filter(total_quantity_sold__gt=0)
         qs = qs.order_by('-total_sales')
-
         return qs
 
     def total_quantity_sold(self, obj):

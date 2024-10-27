@@ -284,21 +284,20 @@ class Command(BaseCommand):
 
             if customer:
                 customer.coffees_free -= c_order.free_drinks
-                coffee_count = await sync_to_async(c_order.total_coffees)()
+                purchased_coffees = await sync_to_async(c_order.total_coffees)()
 
-                if not coffee_count:
-                    paid_coffees = coffee_count - c_order.free_drinks
-                    total_now = customer.coffees_count + paid_coffees
+                if purchased_coffees:
+                    number_of_free_coffees = purchased_coffees // self.coffee_limit * c_order.free_drinks
+                    total_coffees = purchased_coffees + number_of_free_coffees
 
-                    if total_now >= self.coffee_limit:
-                        free_coffee = int(total_now / self.coffee_limit)
-                        customer.coffees_count = total_now - (free_coffee * self.coffee_limit)
-                        customer.coffees_free += free_coffee
-                        message = f"🎉 Congratulations! You've earned {free_coffee} free coffee(s)! 🎉"
+                    if total_coffees >= self.coffee_limit:
+                        customer.coffees_count = total_coffees
+                        customer.coffees_free += number_of_free_coffees
+                        message = f"🎉 Congratulations! You've earned {number_of_free_coffees} free coffee(s)! 🎉"
                         logging.info(message)
                         await client.send_message(customer.user_id, message)
                     else:
-                        customer.coffees_count = total_now
+                        customer.coffees_count = total_coffees
 
                     await sync_to_async(customer.save)()
                 c_order.customer = customer

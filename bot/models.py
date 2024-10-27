@@ -69,17 +69,24 @@ class Order(models.Model):
     def total_price(self):
         total = 0
         used_free = 0
-        for item in OrderItem.objects.filter(order=self).select_related('product'):
-            if self.free_drinks == item.quantity:
-                used_free += item.quantity
-            elif self.free_drinks > item.quantity:
-                used_free += item.quantity
-            elif self.free_drinks < item.quantity:
-                quantity = item.quantity - self.free_drinks
-                total += quantity * item.product.price
-                used_free += self.free_drinks
+        coffee_items = OrderItem.objects.filter(order=self, product__category__name__iexact='coffee')
+        other_items = OrderItem.objects.filter(order=self).exclude(product__category__name__iexact='coffee')
+
+        # Apply free drinks to coffee items
+        free_to_use = self.free_drinks
+        for item in coffee_items.select_related('product'):
+            if free_to_use > 0:
+                free_qty = min(free_to_use, item.quantity)
+                used_free += free_qty
+                payable_qty = item.quantity - free_qty
+                total += payable_qty * item.product.price
+                free_to_use -= free_qty
             else:
                 total += item.quantity * item.product.price
+
+        # Add other categories normally
+        for item in other_items.select_related('product'):
+            total += item.quantity * item.product.price
 
         return total, used_free
 
