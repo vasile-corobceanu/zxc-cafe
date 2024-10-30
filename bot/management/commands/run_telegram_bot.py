@@ -17,7 +17,7 @@ awaiting_quantity = {}
 
 
 class Command(BaseCommand):
-    help = 'Starts the Telegram bot'
+    help = 'Pornește botul Telegram'
     coffee_limit = 5
 
     def handle(self, *args, **options):
@@ -40,12 +40,12 @@ class Command(BaseCommand):
                 customer = await sync_to_async(Customer.objects.get)(user_id=customer_id)
                 current_customer[user_id] = customer
                 buttons = [
-                    Button.inline('Adauga produse', data="go_to_menu"),
+                    Button.inline('Adaugă produse', data="go_to_menu"),
                 ]
                 message = "QR Code scanat!"
                 if customer.coffees_free:
                     message += f"\nClientul are {customer.coffees_free} gratis!"
-                    buttons.append(Button.inline('Foloseste', data="use_free"))
+                    buttons.append(Button.inline('Folosește', data="use_free"))
 
                 if current_order.get(user_id):
                     buttons.append(Button.inline('Finalizați comanda', data="finish"))
@@ -63,13 +63,13 @@ class Command(BaseCommand):
             )
             if created:
                 qr_image = generate_qr_code(bot_username, user_id)
-                await client.send_file(event.chat_id, qr_image, caption=f"QR code for @{username}")
+                await client.send_file(event.chat_id, qr_image, caption=f"Cod QR pentru @{username}")
             else:
                 if customer.is_barista():
                     await menu(event)
                     return
 
-                await event.respond("Welcome back to our Coffee Shop!")
+                await event.respond("Bine ați revenit la Coffee Shop-ul nostru!")
 
         @client.on(events.NewMessage(pattern='/qr'))
         async def qr(event):
@@ -94,7 +94,7 @@ class Command(BaseCommand):
                 [Button.inline(cat.name, data=f"category_{cat.id}")] for cat in categories
             ]
 
-            await event.respond("Select category:", buttons=buttons)
+            await event.respond("Selectați categoria:", buttons=buttons)
 
         @client.on(events.NewMessage(pattern='/now'))
         async def now(event):
@@ -105,7 +105,7 @@ class Command(BaseCommand):
 
             order = current_order.get(user.id)
             if not order:
-                await event.respond('Nu sunt produse adaugate!')
+                await event.respond('Nu sunt produse adăugate!')
                 return
 
             order_items = await sync_to_async(list)(order.items.select_related('product').all())
@@ -114,11 +114,11 @@ class Command(BaseCommand):
                 f"{item.product.name} x {item.quantity}" for item in order_items
             ])
             buttons = [
-                Button.inline('Adaugă încā', data="go_to_menu"),
+                Button.inline('Adaugă încă', data="go_to_menu"),
                 Button.inline('Finalizați comanda', data='check_finish')
             ]
             await event.respond(f"Comanda curentă:\n{order_summary}\n"
-                                f"Pret Total: {total_price}\n"
+                                f"Preț Total: {total_price}\n"
                                 f"Gratis: {used_free} cafele\n\n",
                                 buttons=buttons)
 
@@ -144,7 +144,7 @@ class Command(BaseCommand):
             product = await sync_to_async(Product.objects.get)(id=product_id)
 
             if not product:
-                await event.edit("Nu există asa produs.")
+                await event.edit("Nu există așa produs.")
                 return
             quantity_options = ['1', '2', '3', '4', '5']
             buttons = [
@@ -198,13 +198,13 @@ class Command(BaseCommand):
                 for item in order_items
             ])
             buttons = [
-                Button.inline('Adaugă încā', data="go_to_menu"),
+                Button.inline('Adaugă încă', data="go_to_menu"),
                 Button.inline('Finalizați comanda', data='check_finish')
             ]
 
             message = await event.edit(f"Ați adăugat {quantity} x {product.name} la comanda curentă.\n\n"
                                        f"Comanda curentă:\n{order_summary}\n"
-                                       f"Pret Total: {total_price}\n"
+                                       f"Preț Total: {total_price}\n"
                                        f"Gratis: {used_free} cafele\n\n",
                                        buttons=buttons)
             last_message_id[user.id] = message.id
@@ -248,12 +248,12 @@ class Command(BaseCommand):
                         for item in order_items
                     ])
                     buttons = [
-                        Button.inline('Adaugă încā', data="go_to_menu"),
+                        Button.inline('Adaugă încă', data="go_to_menu"),
                         Button.inline('Finalizați comanda', data='check_finish')
                     ]
                     message = await event.respond(f"Ați adăugat {quantity} x {product.name} la comanda curentă.\n\n"
                                                   f"Comanda curentă:\n{order_summary}\n"
-                                                  f"Pret Total: {total_price}\n"
+                                                  f"Preț Total: {total_price}\n"
                                                   f"Gratis: {used_free} cafele\n\n",
                                                   buttons=buttons)
                     last_message_id[user_id] = message.id
@@ -276,30 +276,33 @@ class Command(BaseCommand):
             c_order = current_order.get(user.id)
 
             if not c_order:
-                await event.edit("No active orders.")
+                await event.edit("Nu există comenzi active.")
                 await menu(event)
                 return
 
             customer = current_customer.get(user.id)
 
             if customer:
-                customer.coffees_free -= c_order.free_drinks
                 purchased_coffees = await sync_to_async(c_order.total_coffees)()
+                coffee_free = abs(purchased_coffees - c_order.free_drinks) or 1 if c_order.free_drinks else 0
+                c_order.free_drinks = coffee_free
 
-                if purchased_coffees:
-                    number_of_free_coffees = purchased_coffees // self.coffee_limit * c_order.free_drinks
-                    total_coffees = purchased_coffees + number_of_free_coffees
+                if purchased_coffees and not coffee_free:
+                    number_of_free_coffees = (purchased_coffees + customer.coffees_count) // self.coffee_limit
 
-                    if total_coffees >= self.coffee_limit:
-                        customer.coffees_count = total_coffees
+                    if number_of_free_coffees:
+                        customer.coffees_count += purchased_coffees
+                        customer.coffees_count = customer.coffees_count - self.coffee_limit * number_of_free_coffees
                         customer.coffees_free += number_of_free_coffees
-                        message = f"🎉 Congratulations! You've earned {number_of_free_coffees} free coffee(s)! 🎉"
+                        message = f"🎉 Felicitări! Ați câștigat {number_of_free_coffees} cafea/cafele gratuită(e)! 🎉"
                         logging.info(message)
                         await client.send_message(customer.user_id, message)
                     else:
-                        customer.coffees_count = total_coffees
+                        customer.coffees_count += purchased_coffees
+                else:
+                    customer.coffees_free -= coffee_free
 
-                    await sync_to_async(customer.save)()
+                await sync_to_async(customer.save)()
                 c_order.customer = customer
 
             c_order.status = 'confirmed'
@@ -313,7 +316,7 @@ class Command(BaseCommand):
             order_summary = '\n'.join([
                 f"- {item.product.name} x {item.quantity}" for item in order_items
             ])
-            await event.edit(f"Comanda a fost adaugata cu succes!\n{order_summary}\nPret Total: {total_price}")
+            await event.edit(f"Comanda a fost adăugată cu succes!\n{order_summary}\nPreț Total: {total_price}")
 
         @client.on(events.CallbackQuery(pattern='check_finish'))
         async def check_finish(event):
@@ -329,19 +332,19 @@ class Command(BaseCommand):
                 return
             buttons = [
                 Button.inline('Nu are QR', data="finish"),
-                Button.inline('Scaneaza QR', data='scan_qr_info')
+                Button.inline('Scanează QR', data='scan_qr_info')
             ]
-            await event.edit(f"Selectati pentru a finaliza comanda!", buttons=buttons)
+            await event.edit(f"Selectați pentru a finaliza comanda!", buttons=buttons)
 
         @client.on(events.CallbackQuery(pattern='scan_qr_info'))
         async def scan_qr_info(event):
-            await event.edit(f"Deschide camera si scaneaza QR Code!")
+            await event.edit(f"Deschide camera și scanează Codul QR!")
 
         @client.on(events.CallbackQuery(pattern='use_free'))
         async def use_free(event):
             user = await event.get_sender()
             customer = current_customer[user.id]
-            print(current_customer)
+            print('customer use free', customer)
             if customer.coffees_free:
                 c_order = current_order.get(user.id)
                 if c_order:
@@ -363,12 +366,12 @@ class Command(BaseCommand):
                 for item in order_items
             ])
             buttons = [
-                Button.inline('Adaugă încā', data="go_to_menu"),
+                Button.inline('Adaugă încă', data="go_to_menu"),
                 Button.inline('Finalizați comanda', data='check_finish')
             ]
 
             message = await event.edit(f"Comanda curentă:\n{order_summary}\n"
-                                       f"Pret Total: {total_price}\n"
+                                       f"Preț Total: {total_price}\n"
                                        f"Gratis: {used_free} cafele\n\n",
                                        buttons=buttons)
             last_message_id[user.id] = message.id
@@ -383,10 +386,10 @@ class Command(BaseCommand):
                 customer = None
 
             if customer:
-                await event.respond("QR CODE MERGE")
+                await event.respond("Cod QR funcționează")
                 await finish(event)
             else:
-                await event.respond("Qr code problem. Error saved!")
+                await event.respond("Problemă cu codul QR. Eroarea a fost salvată!")
 
         @client.on(events.NewMessage(pattern='/info'))
         async def info(event):
@@ -437,11 +440,11 @@ class Command(BaseCommand):
                 )
                 await event.respond(loyalty_status)
 
-        print("Bot is running...")
+        print("Botul rulează...")
         client.run_until_disconnected()
 
     async def get_or_create_user(self, user):
-        user, created = await sync_to_async(Customer.objects.get_or_create)(
+        customer, created = await sync_to_async(Customer.objects.get_or_create)(
             user_id=user.id,
             defaults={
                 'username': user.username,
@@ -449,4 +452,4 @@ class Command(BaseCommand):
                 'role': 'barista' if user.username in settings.BARISTA_USERNAMES else 'customer',
             }
         )
-        return user
+        return customer
