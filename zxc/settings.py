@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,12 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g8jhc#!t3$v4*kaalcfti=7-$0zek8u5&#n6v=5tfp#=b5*&54'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 # Application definition
 
@@ -84,10 +87,11 @@ ASGI_APPLICATION = 'zxc.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'zxc_cafe',
-        'USER': 'postgres',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DATABASE_NAME', 'zxc_cafe'),
+        'USER': os.getenv('DATABASE_USER', 'postgres'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD', ''),
+        'HOST': os.getenv('DATABASE_HOST', 'localhost'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),
     }
 }
 
@@ -130,12 +134,12 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-TELEGRAM_API_ID = 21382300
-TELEGRAM_API_HASH = 'ae81aa2cbccae4a3056bf3f2e971f8e2'
-TELEGRAM_BOT_TOKEN = '7340654169:AAFROeMfOTwOz-t03IX_srS671PQRq1Dj-g'
+TELEGRAM_API_ID = int(os.getenv('TELEGRAM_API_ID', '0'))
+TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH', '')
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
 
-ADMIN_USER_IDS = [216402265]
-BARISTA_USERNAMES = ['vcorobceanu']
+ADMIN_USER_IDS = [int(id.strip()) for id in os.getenv('ADMIN_USER_IDS', '').split(',') if id.strip()]
+BARISTA_USERNAMES = [name.strip() for name in os.getenv('BARISTA_USERNAMES', '').split(',') if name.strip()]
 
 # uvicorn zxc.asgi:application --host 0.0.0.0 --port 8011
 
